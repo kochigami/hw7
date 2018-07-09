@@ -94,6 +94,28 @@ class Game:
                 new_board["Next"] = 3 - self.Next()
 		return Game(board=new_board)
 
+        def calculateGain(self, valid_moves):
+                gain_list = []
+                for move in valid_moves:
+                        next_game = self.NextBoardPosition(move)
+                        #logging.info(next_game._board)
+                        pieces = self.calculatePieces(next_game._board)
+                        gain_list.append(pieces)
+                return gain_list
+
+        def calculatePieces(self, board):
+                black = 0
+                white = 0
+                for piece_line in board["Pieces"]:
+                       for piece in piece_line:
+                                # 2: white
+                                if piece == 2:
+                                        white += 1
+                                # 1: black
+                                elif piece == 1:
+                                        black += 1
+                return (black, white)
+
 # Returns piece on the board.
 # 0 for no pieces, 1 for player 1, 2 for player 2.
 # None for coordinate out of scope.
@@ -149,7 +171,6 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
         # Do the picking of a move and print the result.
         self.pickMove(g)
 
-
     def pickMove(self, g):
     	# Gets all valid moves.
     	valid_moves = g.ValidMoves()
@@ -160,8 +181,12 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
     		# Chooses a valid move randomly if available.
                 # TO STEP STUDENTS:
                 # You'll probably want to change how this works, to do something
-                # more clever than just picking a random move.
-	    	move = random.choice(valid_moves)
+                # more clever than just picking a random move
+
+                gain_list = g.calculateGain(valid_moves)
+                # self.response.write(gain_list)
+
+                move = random.choice(valid_moves)
     		self.response.write(PrettyMove(move))
 
 app = webapp2.WSGIApplication([
