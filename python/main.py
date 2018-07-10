@@ -94,6 +94,62 @@ class Game:
                 new_board["Next"] = 3 - self.Next()
 		return Game(board=new_board)
 
+        def Score(self, depth):
+                # 試合の後半の方だともう隙間がないから３手先まで読めない場合がある．
+                # len(self.ValidMoves()) == 0
+                if depth < 1 or len(self.ValidMoves()) == 0:
+                        return self.CountBlack() - self.CountWhite()
+                best = min(self.CountBlack(), self.CountWhite())
+                best_move = self.ValidMoves()[0]
+                for move in self.ValidMoves():
+                        # logging.info(move)
+                        next_game = self.NextBoardPosition(move)
+                        # next_board = next_game._board
+                        # logging.info(next_game._board)
+                        score = next_game.Score(depth - 1)
+                        # logging.info(self.Next())
+                        if self.Next() == 1:
+                                # 1: black
+                                if score > best:
+                                        best = score
+                                        best_move = move
+                        else:
+                                # 2: white
+                                if score < best:
+                                        best = score
+                                        best_move = move
+                return best, best_move
+
+        def CountBlack(self):
+                black = 0
+                for i in range(len(self._board["Pieces"])):
+                        for j in range(len(self._board["Pieces"][i])):
+                                # 1: black
+                                if self._board["Pieces"][i][j] == 1:
+                                        black += self.ScoreList(i, j)
+                return black
+
+        def CountWhite(self):
+                white = 0
+                for i in range(len(self._board["Pieces"])):
+                        for j in range(len(self._board["Pieces"][i])):
+                                # 2: white
+                                if self._board["Pieces"][i][j] == 2:
+                                        white += self.ScoreList(i, j)
+                return white
+
+        def ScoreList(self, i, j):
+                score = [( 30, -12,  0, -1, -1,  0, -12,  30),
+                         (-12, -15, -3, -3, -3, -3, -15, -12),
+                         (  0,  -3,  0, -1, -1,  0,  -3,   0),
+                         ( -1,  -3, -1, -1, -1, -1,  -3,  -1),
+                         ( -1,  -3, -1, -1, -1, -1,  -3,  -1),
+                         (  0,  -3,  0, -1, -1,  0,  -3,   0),
+                         (-12, -15, -3, -3, -3, -3, -15, -12),
+                         ( 30, -12,  0, -1, -1,  0, -12,  30)]
+                return score[i][j]
+
+
 # Returns piece on the board.
 # 0 for no pieces, 1 for player 1, 2 for player 2.
 # None for coordinate out of scope.
@@ -149,7 +205,6 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
         # Do the picking of a move and print the result.
         self.pickMove(g)
 
-
     def pickMove(self, g):
     	# Gets all valid moves.
     	valid_moves = g.ValidMoves()
@@ -160,8 +215,15 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
     		# Chooses a valid move randomly if available.
                 # TO STEP STUDENTS:
                 # You'll probably want to change how this works, to do something
-                # more clever than just picking a random move.
-	    	move = random.choice(valid_moves)
+                # more clever than just picking a random move
+
+                depth = 3
+                score, move = g.Score(depth)
+                #self.response.write(str(score) + "<br>")
+                #self.response.write(str(move) + "<br>")
+                #self.response.write(move)
+
+                #move = random.choice(valid_moves)
     		self.response.write(PrettyMove(move))
 
 app = webapp2.WSGIApplication([
