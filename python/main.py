@@ -99,14 +99,18 @@ class Game:
                 # len(self.ValidMoves()) == 0
                 if depth < 1 or len(self.ValidMoves()) == 0:
                         return self.CountBlack() - self.CountWhite()
-                best = min(self.CountBlack(), self.CountWhite())
-                best_move = self.ValidMoves()[0]
+                best, best_move = self.MinScore(self.ValidMoves())
+                logging.info("initial: " + str(best_move))
+                logging.info("depth: " + str(depth))
+                #best_move = self.ValidMoves()[0]
+                #best_move = []
                 for move in self.ValidMoves():
                         # logging.info(move)
                         next_game = self.NextBoardPosition(move)
                         # next_board = next_game._board
                         # logging.info(next_game._board)
                         score = next_game.Score(depth - 1)
+                        #logging.info("score: " + str(score))
                         # logging.info(self.Next())
                         if self.Next() == 1:
                                 # 1: black
@@ -118,7 +122,21 @@ class Game:
                                 if score < best:
                                         best = score
                                         best_move = move
-                return best, best_move
+                if depth == 3:
+                        logging.info("depth: " + str(depth))
+                        logging.info("best: " + str(best))
+                        logging.info("best_move: " + str(best_move))
+
+                        return best, best_move
+                else:
+                        return best
+ 
+        def MinScore(self, valid_moves):
+                score_list = []
+                for move in valid_moves:
+                        next_game = self.NextBoardPosition(move)
+                        score_list.append(next_game.CountBlack() - next_game.CountWhite())
+                return min(score_list), valid_moves[valid_moves.index(min(valid_moves))]
 
         def CountBlack(self):
                 black = 0
