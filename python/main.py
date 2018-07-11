@@ -94,31 +94,59 @@ class Game:
                 new_board["Next"] = 3 - self.Next()
 		return Game(board=new_board)
 
-        def Score(self, depth):
+        def Score(self, depth, alpha, beta):
                 # 試合の後半の方だともう隙間がないから３手先まで読めない場合がある．
                 # len(self.ValidMoves()) == 0
                 if depth < 1 or len(self.ValidMoves()) == 0:
+                        #tmp_move = None
                         return self.CountBlack() - self.CountWhite()
                 best = min(self.CountBlack(), self.CountWhite())
                 best_move = self.ValidMoves()[0]
+                i=0
                 for move in self.ValidMoves():
-                        # logging.info(move)
                         next_game = self.NextBoardPosition(move)
                         # next_board = next_game._board
                         # logging.info(next_game._board)
-                        score = next_game.Score(depth - 1)
-                        # logging.info(self.Next())
+                        score = next_game.Score(depth - 1, alpha, beta)
+                        logging.info(score)
+                        #logging.info(self.Next())
+                        #logging.info(next_game._board["Next"])
+                        #logging.info("hoge")
+                        #logging.info(best)
+                        i+=1
                         if self.Next() == 1:
                                 # 1: black
                                 if score > best:
+                                        #logging.info(score)
+                                        #logging.info(best)
                                         best = score
+                                        alpha = score
                                         best_move = move
+                                if score > beta:
+                                        #logging.info(alpha) #
+                                        #logging.info(beta)
+                                        #logging.info(score) #
+                                        #logging.info(move)
+                                        #logging.info(i)
+                                        #logging.info("black")
+                                        #logging.info(alpha)
+                                        #logging.info(beta)
+                                        break
+
                         else:
                                 # 2: white
                                 if score < best:
                                         best = score
+                                        beta = score
                                         best_move = move
-                return best, best_move
+                                if score < alpha:
+                                        logging.info("white")
+                                        #logging.info("alpha cut")
+                                        #logging.info(alpha)
+                                        #logging.info(beta)
+                                        break
+
+                return best, best_move ##
 
         def CountBlack(self):
                 black = 0
@@ -217,11 +245,15 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
                 # You'll probably want to change how this works, to do something
                 # more clever than just picking a random move
 
-                depth = 3
-                score, move = g.Score(depth)
+                depth = 5
+                score, move = g.Score(depth, alpha=-1000000, beta=1000000)
                 #self.response.write(str(score) + "<br>")
                 #self.response.write(str(move) + "<br>")
                 #self.response.write(move)
+                #logging.info("start")
+                #logging.info(alpha)
+                #logging.info(beta)
+                #logging.info("end")
 
                 #move = random.choice(valid_moves)
     		self.response.write(PrettyMove(move))
