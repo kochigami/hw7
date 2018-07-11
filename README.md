@@ -1,3 +1,18 @@
+# やったこと
+
+## min max
+
+depth=3 にして，greedyとrandomには勝てるようになった  
+
+## alpha-beta
+
+depth=3 以上も試せると思ったら，depth=4でも時間切れになってしまう．  
+
+# 困っていること
+
+実装間違っているのかな．  
+賢そうな挙動はあまりしていない．
+
 # Homework 7
 
 1. Fork a copy for your changes
