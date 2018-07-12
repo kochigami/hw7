@@ -7,6 +7,8 @@ import logging
 import random
 import webapp2
 
+DEPTH=3
+
 # Reads json description of the board and provides simple interface.
 class Game:
 	# Takes json or a board directly.
@@ -94,31 +96,64 @@ class Game:
                 new_board["Next"] = 3 - self.Next()
 		return Game(board=new_board)
 
-        def Score(self, depth):
+        def Score(self, depth, alpha, beta):
                 # 試合の後半の方だともう隙間がないから３手先まで読めない場合がある．
                 # len(self.ValidMoves()) == 0
                 if depth < 1 or len(self.ValidMoves()) == 0:
                         return self.CountBlack() - self.CountWhite()
-                best = min(self.CountBlack(), self.CountWhite())
-                best_move = self.ValidMoves()[0]
+                # best value is wrong
+                best, best_move = self.MinScore(self.ValidMoves())
+                if self.Next() == 1:
+                        best = -10000
+                else:
+                        best = 10000
+                #logging.info("depth:" + str(depth))
+                #logging.info("initial best: " + str(best))
+                #logging.info("initial move: " + str(best_move))
+
+                #logging.info("depth: " + str(depth))
                 for move in self.ValidMoves():
-                        # logging.info(move)
                         next_game = self.NextBoardPosition(move)
                         # next_board = next_game._board
                         # logging.info(next_game._board)
-                        score = next_game.Score(depth - 1)
-                        # logging.info(self.Next())
+                        score = next_game.Score(depth - 1, alpha, beta)
+                        #logging.info("depth:" + str(depth))
+                        #logging.info("score: " +str(score))
+                        #logging.info("move: " + str(move))
                         if self.Next() == 1:
                                 # 1: black
                                 if score > best:
                                         best = score
+                                        alpha = score
                                         best_move = move
+
+                                if score > beta:
+                                        break
+                                        #return score
                         else:
                                 # 2: white
                                 if score < best:
                                         best = score
-                                        best_move = move
-                return best, best_move
+                                        beta = score
+                                        best_move = move                                                                                
+                                if score < alpha:
+                                        break
+                                        #return score
+                if depth == DEPTH:
+                        #logging.info("depth: " + str(depth))
+                        #logging.info("best: " + str(best))
+                        #logging.info("best_move: " + str(best_move))
+
+                        return best, best_move
+                else:
+                        return best
+ 
+        def MinScore(self, valid_moves):
+                score_list = []
+                for move in valid_moves:
+                        next_game = self.NextBoardPosition(move)
+                        score_list.append(next_game.CountBlack() - next_game.CountWhite())
+                return min(score_list), valid_moves[score_list.index(min(score_list))]
 
         def CountBlack(self):
                 black = 0
@@ -139,6 +174,16 @@ class Game:
                 return white
 
         def ScoreList(self, i, j):
+                # 前半と後半で評価関数を変えたいんだけど，historyの取り出し方が分からない．
+                # score = [( 100, -40,  20, 5,  5,  20, -40,  100),
+                #          (-40,  -80,  -1, -1, -1, -1, -80, -40),
+                #          ( 20,  -1,   5,  1,  1,  5,  -1,   20),
+                #          ( 5,   -1,   1,  0,  0,  1,  -1,   5),
+                #          ( 5,   -1,   1,  0,  0,  1,  -1,   5),
+                #          ( 20,  -1,   5,  1,  1,  5,  -1,   20),
+                #          (-40,  -80,  -1, -1, -1, -1, -80,  -40),
+                #          ( 100, -40,  20, 5,  5,  5,  -40,  100)]
+                
                 score = [( 30, -12,  0, -1, -1,  0, -12,  30),
                          (-12, -15, -3, -3, -3, -3, -15, -12),
                          (  0,  -3,  0, -1, -1,  0,  -3,   0),
@@ -147,6 +192,7 @@ class Game:
                          (  0,  -3,  0, -1, -1,  0,  -3,   0),
                          (-12, -15, -3, -3, -3, -3, -15, -12),
                          ( 30, -12,  0, -1, -1,  0, -12,  30)]
+
                 return score[i][j]
 
 
@@ -196,16 +242,18 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
 """)
           return
         else:
+          #history = (self.request.get('json'))[2]
           g = Game(self.request.get('json'))
           self.pickMove(g)
 
     def post(self):
     	# Reads JSON representation of the board and store as the object.
-    	g = Game(self.request.body)
+        g = Game(self.request.body)
         # Do the picking of a move and print the result.
         self.pickMove(g)
 
     def pickMove(self, g):
+        #logging.info(history)
     	# Gets all valid moves.
     	valid_moves = g.ValidMoves()
     	if len(valid_moves) == 0:
@@ -216,9 +264,12 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
                 # TO STEP STUDENTS:
                 # You'll probably want to change how this works, to do something
                 # more clever than just picking a random move
-
-                depth = 3
-                score, move = g.Score(depth)
+                alpha = -10000
+                beta = 10000
+                depth = DEPTH
+                score, move = g.Score(depth, alpha, beta)
+                logging.info("score: " + str(score))
+                logging.info("move: " + str(move))
                 #self.response.write(str(score) + "<br>")
                 #self.response.write(str(move) + "<br>")
                 #self.response.write(move)
