@@ -97,26 +97,31 @@ class Game:
 		return Game(board=new_board)
 
         def Score(self, depth, alpha, beta):
-                # 試合の後半の方だともう隙間がないから３手先まで読めない場合がある．
+                # 試合の後半の方だともう隙間がないから，depthの値，例えば３手先まで読めない場合がある．
                 # len(self.ValidMoves()) == 0
                 if depth < 1 or len(self.ValidMoves()) == 0:
-                        return self.CountBlack() - self.CountWhite()
-                # best value is wrong
+                        return self.CountBlack(self.CountPieces()) - self.CountWhite(self.CountPieces())
+                # best, best_moveのno reference errorを回避するために作ったが，この関数自体はいらない
                 best, best_move = self.MinScore(self.ValidMoves())
+                # プレイヤーが白か黒かでしきい値の初期設定を変える
+                # 1: 黒，2: 白
                 if self.Next() == 1:
                         best = -10000
                 else:
                         best = 10000
+
+                # プリントデバッグの名残
                 #logging.info("depth:" + str(depth))
                 #logging.info("initial best: " + str(best))
                 #logging.info("initial move: " + str(best_move))
 
-                #logging.info("depth: " + str(depth))
                 for move in self.ValidMoves():
                         next_game = self.NextBoardPosition(move)
+                        # プリントデバッグの名残
                         # next_board = next_game._board
                         # logging.info(next_game._board)
                         score = next_game.Score(depth - 1, alpha, beta)
+                        # プリントデバッグの名残
                         #logging.info("depth:" + str(depth))
                         #logging.info("score: " +str(score))
                         #logging.info("move: " + str(move))
@@ -129,7 +134,6 @@ class Game:
 
                                 if score > beta:
                                         break
-                                        #return score
                         else:
                                 # 2: white
                                 if score < best:
@@ -138,8 +142,10 @@ class Game:
                                         best_move = move                                                                                
                                 if score < alpha:
                                         break
-                                        #return score
                 if depth == DEPTH:
+                        # depth 3-> 2-> 1 -> 2 -> 3と戻ってくる．depth=3の時抜ける．
+
+                        # プリントデバッグの名残
                         #logging.info("depth: " + str(depth))
                         #logging.info("best: " + str(best))
                         #logging.info("best_move: " + str(best_move))
@@ -152,46 +158,56 @@ class Game:
                 score_list = []
                 for move in valid_moves:
                         next_game = self.NextBoardPosition(move)
-                        score_list.append(next_game.CountBlack() - next_game.CountWhite())
+                        score_list.append(next_game.CountBlack(self.CountPieces()) - next_game.CountWhite(self.CountPieces()))
                 return min(score_list), valid_moves[score_list.index(min(score_list))]
 
-        def CountBlack(self):
+        def CountPieces(self):
+                pieces = 0
+                for i in range(len(self._board["Pieces"])):
+                        for j in range(len(self._board["Pieces"][i])):
+                                if self._board["Pieces"][i][j] == 1 or self._board["Pieces"][i][j] == 2:
+                                        pieces += 1
+                return pieces
+
+        def CountBlack(self, count):
                 black = 0
                 for i in range(len(self._board["Pieces"])):
                         for j in range(len(self._board["Pieces"][i])):
                                 # 1: black
                                 if self._board["Pieces"][i][j] == 1:
-                                        black += self.ScoreList(i, j)
+                                        black += self.ScoreList(i, j, count)
                 return black
 
-        def CountWhite(self):
+        def CountWhite(self, count):
                 white = 0
                 for i in range(len(self._board["Pieces"])):
                         for j in range(len(self._board["Pieces"][i])):
                                 # 2: white
                                 if self._board["Pieces"][i][j] == 2:
-                                        white += self.ScoreList(i, j)
+                                        white += self.ScoreList(i, j, count)
                 return white
 
-        def ScoreList(self, i, j):
-                # 前半と後半で評価関数を変えたいんだけど，historyの取り出し方が分からない．
-                # score = [( 100, -40,  20, 5,  5,  20, -40,  100),
-                #          (-40,  -80,  -1, -1, -1, -1, -80, -40),
-                #          ( 20,  -1,   5,  1,  1,  5,  -1,   20),
-                #          ( 5,   -1,   1,  0,  0,  1,  -1,   5),
-                #          ( 5,   -1,   1,  0,  0,  1,  -1,   5),
-                #          ( 20,  -1,   5,  1,  1,  5,  -1,   20),
-                #          (-40,  -80,  -1, -1, -1, -1, -80,  -40),
-                #          ( 100, -40,  20, 5,  5,  5,  -40,  100)]
-                
-                score = [( 30, -12,  0, -1, -1,  0, -12,  30),
-                         (-12, -15, -3, -3, -3, -3, -15, -12),
-                         (  0,  -3,  0, -1, -1,  0,  -3,   0),
-                         ( -1,  -3, -1, -1, -1, -1,  -3,  -1),
-                         ( -1,  -3, -1, -1, -1, -1,  -3,  -1),
-                         (  0,  -3,  0, -1, -1,  0,  -3,   0),
-                         (-12, -15, -3, -3, -3, -3, -15, -12),
-                         ( 30, -12,  0, -1, -1,  0, -12,  30)]
+        def ScoreList(self, i, j, count):
+                # 最初は角をたくさん狙う
+                if count < 30:
+                        score = [( 100, -40,  20, 5,  5,  20, -40,  100),
+                                 (-40,  -80,  -1, -1, -1, -1, -80, -40),
+                                 ( 20,  -1,   5,  1,  1,  5,  -1,   20),
+                                 ( 5,   -1,   1,  0,  0,  1,  -1,   5),
+                                 ( 5,   -1,   1,  0,  0,  1,  -1,   5),
+                                 ( 20,  -1,   5,  1,  1,  5,  -1,   20),
+                                 (-40,  -80,  -1, -1, -1, -1, -80,  -40),
+                                 ( 100, -40,  20, 5,  5,  5,  -40,  100)]
+                # 途中からはそんなに狙わない
+                else:
+                        score = [( 30, -12,  0, -1, -1,  0, -12,  30),
+                                 (-12, -15, -3, -3, -3, -3, -15, -12),
+                                 (  0,  -3,  0, -1, -1,  0,  -3,   0),
+                                 ( -1,  -3, -1, -1, -1, -1,  -3,  -1),
+                                 ( -1,  -3, -1, -1, -1, -1,  -3,  -1),
+                                 (  0,  -3,  0, -1, -1,  0,  -3,   0),
+                                 (-12, -15, -3, -3, -3, -3, -15, -12),
+                                 ( 30, -12,  0, -1, -1,  0, -12,  30)]
 
                 return score[i][j]
 
@@ -242,7 +258,6 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
 """)
           return
         else:
-          #history = (self.request.get('json'))[2]
           g = Game(self.request.get('json'))
           self.pickMove(g)
 
@@ -253,7 +268,6 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
         self.pickMove(g)
 
     def pickMove(self, g):
-        #logging.info(history)
     	# Gets all valid moves.
     	valid_moves = g.ValidMoves()
     	if len(valid_moves) == 0:
@@ -270,11 +284,6 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
                 score, move = g.Score(depth, alpha, beta)
                 logging.info("score: " + str(score))
                 logging.info("move: " + str(move))
-                #self.response.write(str(score) + "<br>")
-                #self.response.write(str(move) + "<br>")
-                #self.response.write(move)
-
-                #move = random.choice(valid_moves)
     		self.response.write(PrettyMove(move))
 
 app = webapp2.WSGIApplication([

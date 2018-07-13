@@ -1,18 +1,24 @@
 # やったこと
 
-## min max
+## min max (pull-req: modify-min-max)
 
 depth=3 にして，greedyとrandomには勝てるようになった  
 
-## alpha-beta
+## alpha-beta (pull-req: modify-min-max)
 
-depth=3 以上も試せると思ったら，depth=4でも時間切れになってしまう．  
+これでdepth=3 以上も試せると思ったら，depth=4でも時間切れになってしまう．  
 実装を見直したけれど，やはりdepth=4でも時間切れになる．．．
+
+## alpha-beta + 盤面の評価値の変更 (pull-req: add-new-score-list)
+
+初めのうちは角を取ろうと頑張るようにした．  
+うまくいくかな．
 
 # 困っていること
 
-実装間違っているのかな． => プリントしながらdepth=1, 2を見てみたけれど，合っていそう． 
-賢そうな挙動はあまりしていない． => 戦略を増やす．  
+- alpha-beta法の実装間違っているのかな． => プリントしながらdepth=1, 2を見てみたけれど，合っていそう．  
+- 賢そうな挙動はあまりしていない． => 戦略を増やす．  
+- jsonの中身の，historyとかの取り出し方が分からない．
 
 # Homework 7
 
